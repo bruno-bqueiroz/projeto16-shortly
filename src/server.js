@@ -130,8 +130,28 @@ server.get('/urls/open/:shortUrl', async (req, res)=>{
          res.redirect(url.rows[0].url);
     } catch (error) {
         res.sendStatus(error);
+    } 
+});
+
+server.delete('/urls/:id', async (req, res)=>{
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    const id = req.params.id;
+
+    try {
+        const haveSession = await connection.query(`SELECT * FROM sessions WHERE token = '${token}';`);
+        if(!haveSession.rows[0]) return res.sendStatus(401);
+        
+        const url = await connection.query(`SELECT * FROM urls WHERE id = '${id}'`);
+        if (!url.rows[0]) return res.sendStatus(404);
+        else if(url.rows[0].userId !== haveSession.rows[0].userId) return res.sendStatus(401);
+        else {
+            await connection.query(`DELETE FROM urls WHERE id = '${id}'`)
+        }
+
+    } catch (error) {
+        res.sendStatus(error); 
     }
-    
+    res.sendStatus(204);
 });
 
 
