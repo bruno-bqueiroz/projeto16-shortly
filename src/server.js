@@ -3,6 +3,7 @@ import cors from 'cors';
 import pg from 'pg';
 const { Pool } = pg;
 import { v4 as uuid } from 'uuid';
+import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import joi from 'joi';
 import dotenv from 'dotenv';
@@ -26,6 +27,16 @@ const signinSchema = joi.object({
     email: joi.string().required(),
     password: joi.string().required()
 })
+
+const isValidUrl = urlString=> {
+    var urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
+  '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
+  '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
+  '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
+  '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
+  '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
+return !!urlPattern.test(urlString);
+}
 
 server.post ('/signup', async (req, res) =>{
     const validation = signupSchema.validate(req.body);
@@ -72,24 +83,18 @@ server.post ('/urls/shorten', async (req, res) => {
     if(!haveSession.rows[0]) return res.sendStatus(401);
         const {url} = req.body;
 
-        const isValidUrl = urlString=> {
-            var urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
-          '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
-          '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
-          '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
-          '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
-          '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
-        return !!urlPattern.test(urlString);
-      }
 	if(!isValidUrl(url)) return res.status(422).send('O link não é uma url');
+    console.log(haveSession.rows[0].userId)
+    const shortUrl = nanoid(10)
+    await connection.query ('INSERT INTO urls ("userId", "shortUrl", url) VALUES ($1, $2, $3);', [haveSession.rows[0].userId, shortUrl, url]);
+
+    res.status(201).send({
+        shortUrl: shortUrl
+    })
 
     } catch (error) {
         res.sendStatus(error);
-    }
-
-    res.status(201).send({
-        shortUrl: "a8745bcf" // aqui o identificador que for gerado
-    })
+    }   
 });
 
 
