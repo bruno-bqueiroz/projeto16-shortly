@@ -121,11 +121,17 @@ server.get('/urls/open/:shortUrl', async (req, res)=>{
     try {
         const url = await connection.query(`SELECT * FROM urls WHERE "shortUrl" = '${shortUrl}';`);
         if(!url.rows[0]) return res.sendStatus(404)
-        console.log(url.rows[0])
+        console.log(url.rows[0].url)
+        
+        const visitCount = await connection.query(`SELECT "visitCount" FROM "visitCount" WHERE "idUrl" = '${url.rows[0].id}';`);
+        const updateVisitCount = visitCount.rows[0].visitCount + 1;
+
+         await connection.query(`UPDATE "visitCount" SET "visitCount" = '${updateVisitCount}' WHERE "idUrl" = '${url.rows[0].id}';`)
+         res.redirect(url.rows[0].url);
     } catch (error) {
         res.sendStatus(error);
     }
-    res.sendStatus(200);
+    
 });
 
 
