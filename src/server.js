@@ -53,20 +53,45 @@ server.post('/signin', async (req, res) => {
     if (validation.error) return res.status(422).send(validation.error.message);
     const {email, password} = req.body;
     try {   
-        const user = await connection.query ('SELECT * FROM users');
+        const user = await connection.query (`SELECT * FROM users`);
         const temUser = user.rows.find(value => value.email === email);
         const isValid = bcrypt.compareSync(password, temUser.password);
         if (!temUser || !isValid) return res.sendStatus(401);
         const token = uuid();
         await connection.query ('INSERT INTO sessions ("userId", token) VALUES ($1, $2);', [temUser.id, token]);
         res.status(200).send({token: token});
+    } catch (error) {
+        res.sendStatus(error);
+    }
+});
+
+server.post ('/urls/shorten', async (req, res) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    try {
+        const haveSession = await connection.query(`SELECT * FROM sessions WHERE token = '${token}';`)
+    if(!haveSession.rows[0]) return res.sendStatus(401);
+        const {url} = req.body;
+
+        const isValidUrl = urlString=> {
+            var urlPattern = new RegExp('^(https?:\\/\\/)?'+ // validate protocol
+          '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // validate domain name
+          '((\\d{1,3}\\.){3}\\d{1,3}))'+ // validate OR ip (v4) address
+          '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+ // validate port and path
+          '(\\?[;&a-z\\d%_.~+=-]*)?'+ // validate query string
+          '(\\#[-a-z\\d_]*)?$','i'); // validate fragment locator
+        return !!urlPattern.test(urlString);
+      }
+	if(!isValidUrl(url)) return res.status(422).send('O link não é uma url');
 
     } catch (error) {
-    
         res.sendStatus(error);
     }
 
-})
+    res.status(201).send({
+        shortUrl: "a8745bcf" // aqui o identificador que for gerado
+    })
+});
+
 
 server.get('/status', (req, res) =>{
     res.send('ok');
