@@ -94,9 +94,21 @@ server.post ('/urls/shorten', async (req, res) => {
 
     } catch (error) {
         res.sendStatus(error);
-    }   
+    }
 });
 
+server.get('/urls/:id', async (req, res)=>{
+    const id = req.params.id;
+    
+    try {
+        const url = await connection.query(`SELECT id, "shortUrl", url FROM urls WHERE id = '${id}';`);
+        console.log(url.rows[0]);
+        if (!url.rows[0]) return res.sendStatus(404);
+        res.status(200).send(url.rows);
+    } catch (error) {
+        res.sendStatus(error);
+    } 
+});
 
 server.get('/status', (req, res) =>{
     res.send('ok');
