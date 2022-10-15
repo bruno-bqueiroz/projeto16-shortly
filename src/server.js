@@ -84,9 +84,14 @@ server.post ('/urls/shorten', async (req, res) => {
         const {url} = req.body;
 
 	if(!isValidUrl(url)) return res.status(422).send('O link não é uma url');
-    console.log(haveSession.rows[0].userId)
+    
     const shortUrl = nanoid(10)
-    await connection.query ('INSERT INTO urls ("userId", "shortUrl", url) VALUES ($1, $2, $3);', [haveSession.rows[0].userId, shortUrl, url]);
+     await connection.query ('INSERT INTO urls ("userId", "shortUrl", url) VALUES ($1, $2, $3);', [haveSession.rows[0].userId, shortUrl, url]);
+
+     const novaUrl = await connection.query(`SELECT id FROM urls WHERE "shortUrl" = '${shortUrl}'`)
+
+
+     await connection.query ('INSERT INTO "visitCount" ("idUrl", "visitCount") VALUES ($1, $2);', [novaUrl.rows[0].id, 0]);
 
     res.status(201).send({
         shortUrl: shortUrl
@@ -109,6 +114,21 @@ server.get('/urls/:id', async (req, res)=>{
         res.sendStatus(error);
     } 
 });
+
+server.get('/urls/open/:shortUrl', async (req, res)=>{
+    const shortUrl = req.params.shortUrl;
+        
+    try {
+        const url = await connection.query(`SELECT * FROM urls WHERE "shortUrl" = '${shortUrl}';`);
+        if(!url.rows[0]) return res.sendStatus(404)
+        console.log(url.rows[0])
+    } catch (error) {
+        res.sendStatus(error);
+    }
+    res.sendStatus(200);
+});
+
+
 
 server.get('/status', (req, res) =>{
     res.send('ok');
