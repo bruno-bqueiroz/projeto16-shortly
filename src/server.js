@@ -91,7 +91,7 @@ server.post ('/urls/shorten', async (req, res) => {
      const novaUrl = await connection.query(`SELECT id FROM urls WHERE "shortUrl" = '${shortUrl}'`)
 
 
-     await connection.query ('INSERT INTO "visitCount" ("idUrl", "visitCount") VALUES ($1, $2);', [novaUrl.rows[0].id, 0]);
+     await connection.query ('INSERT INTO "visitCount" ("idUrl", "visitCount", "userId") VALUES ($1, $2, $3);', [novaUrl.rows[0].id, 0, haveSession.rows[0].userId]);
 
     res.status(201).send({
         shortUrl: shortUrl
@@ -147,13 +147,46 @@ server.delete('/urls/:id', async (req, res)=>{
         else {
             await connection.query(`DELETE FROM urls WHERE id = '${id}'`)
         }
-
     } catch (error) {
         res.sendStatus(error); 
     }
     res.sendStatus(204);
 });
 
+server.get('/users/me', async (req, res)=>{
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    try {
+        const haveSession = await connection.query(`SELECT "userId" FROM sessions WHERE token = '${token}';`);
+        if(!haveSession.rows[0]) return res.sendStatus(401);
+        
+        const name = await connection.query(`SELECT name FROM users WHERE id = '${haveSession.rows[0].userId}';`);
+        
+        const visitCount = await connection.query(`SELECT SUM ("visitCount") AS "visitCount" FROM "visitCount" WHERE "userId" = '${haveSession.rows[0].userId}';`);
+        console.log(visitCount.rows[0].visitCount)
+
+        const shortenedUrls = await connection.query(`SELECT 
+        urls.id AS id, urls."shortUrl" AS "shortUrl", urls.url AS url,
+        "visitCount"."visitCount" AS "visitCount" 
+        FROM urls JOIN "visitCount"
+        ON urls.id =  "visitCount"."idUrl" WHERE urls."userId" = '${haveSession.rows[0].userId}';`)
+
+         console.log(shortenedUrls.rows)
+
+
+        res.status(200).send(
+            {
+            id: haveSession.rows[0].userId,
+            name: name.rows[0].name,
+            visitCount: visitCount.rows[0].visitCount,
+            shortenedUrls: shortenedUrls.rows
+            }
+        );
+    } catch (error) {
+        res.sendStatus(error); 
+    }
+    
+});
 
 
 server.get('/status', (req, res) =>{
