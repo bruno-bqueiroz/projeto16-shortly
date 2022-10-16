@@ -171,9 +171,6 @@ server.get('/users/me', async (req, res)=>{
         FROM urls JOIN "visitCount"
         ON urls.id =  "visitCount"."idUrl" WHERE urls."userId" = '${haveSession.rows[0].userId}';`)
 
-         console.log(shortenedUrls.rows)
-
-
         res.status(200).send(
             {
             id: haveSession.rows[0].userId,
@@ -185,7 +182,24 @@ server.get('/users/me', async (req, res)=>{
     } catch (error) {
         res.sendStatus(error); 
     }
+});
+
+server.get('/ranking', async (req, res) =>{
+
+    try {
+        const ranking = await connection.query(`SELECT
+		users.id AS id, users.name AS name, 
+		COUNT (urls."shortUrl") AS "linksCount",
+		SUM ("visitCount"."visitCount") AS "visitCount"
+			FROM users
+				LEFT JOIN urls ON urls."userId" = users.id
+				LEFT JOIN "visitCount" ON "visitCount"."userId" = users.id GROUP BY users.id;`);
+
     
+    res.status(200).send(ranking.rows);    
+    } catch (error) {
+        res.sendStatus(error); 
+    }
 });
 
 
