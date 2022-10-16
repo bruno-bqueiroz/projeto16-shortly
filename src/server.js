@@ -194,7 +194,6 @@ server.get('/ranking', async (req, res) =>{
 			FROM users
 				LEFT JOIN urls ON urls."userId" = users.id
 				LEFT JOIN "visitCount" ON "visitCount"."userId" = users.id GROUP BY users.id;`);
-
     
     res.status(200).send(ranking.rows);    
     } catch (error) {
