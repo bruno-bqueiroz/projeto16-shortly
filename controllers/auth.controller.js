@@ -4,8 +4,6 @@ import { signupSchema, signinSchema} from '../shemas/auth.shema.js'
 import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcrypt';
 
-
-
 async function signUp (req, res) {
     const validation = signupSchema.validate(req.body);
    
@@ -14,6 +12,7 @@ async function signUp (req, res) {
     
     if (password !== confirmPassword) return res.status(422).send("Os campos password e confirmPassord devem ser iguais.");
     const hashPassword = bcrypt.hashSync(password, 10);
+    
     try {
         const emails = await connection.query (`SELECT * FROM users`);
         const temEmail = emails.rows.find(value => value.email === email)
@@ -27,20 +26,17 @@ async function signUp (req, res) {
     res.sendStatus(201);
 }
 
-
-
-
-
-
-
 async function signIn (req, res)  {
     const validation = signinSchema.validate(req.body);
+    
     if (validation.error) return res.status(422).send(validation.error.message);
     const {email, password} = req.body;
+    
     try {   
         const user = await connection.query (`SELECT * FROM users`);
         const temUser = user.rows.find(value => value.email === email);
         const isValid = bcrypt.compareSync(password, temUser.password);
+        
         if (!temUser || !isValid) return res.sendStatus(401);
         const token = uuid();
         await connection.query ('INSERT INTO sessions ("userId", token) VALUES ($1, $2);', [temUser.id, token]);
@@ -49,7 +45,5 @@ async function signIn (req, res)  {
         res.sendStatus(error);
     }
 }
-
-
 
 export {signUp, signIn}

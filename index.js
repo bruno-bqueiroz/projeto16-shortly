@@ -18,6 +18,4 @@ server.use(usersMe);
 server.use(rankingRouter);
 server.use(statusRouter);
 
-
-
 server.listen(process.env.PORT || 4000, () => console.log(`Listen on port ${process.env.PORT || 4000}`));
