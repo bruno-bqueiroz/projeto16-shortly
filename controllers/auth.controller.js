@@ -1,19 +1,10 @@
 import { connection } from '../database/database.js';
-import joi from 'joi';
+import { signupSchema, signinSchema} from '../shemas/auth.shema.js'
+
 import { v4 as uuid } from 'uuid';
 import bcrypt from 'bcrypt';
 
-const signupSchema = joi.object({
-    name: joi.string().required(),
-    email: joi.string().required(),
-    password: joi.string().required(),
-    confirmPassword: joi.string().required()
-})
 
-const signinSchema = joi.object({
-    email: joi.string().required(),
-    password: joi.string().required()
-})
 
 async function signUp (req, res) {
     const validation = signupSchema.validate(req.body);

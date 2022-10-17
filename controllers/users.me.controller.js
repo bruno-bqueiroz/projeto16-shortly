@@ -1,4 +1,5 @@
 import { connection } from '../database/database.js';
+
  async function usersMe (req, res) {
     const token = req.headers.authorization?.replace('Bearer ', '');
     

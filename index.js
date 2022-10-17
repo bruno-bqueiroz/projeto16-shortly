@@ -19,5 +19,5 @@ server.use(rankingRouter);
 server.use(statusRouter);
 
 
-const PORT = process.env.PORT || 4000
-server.listen(PORT, () => console.log(`Listen on port ${PORT}`));
+
+server.listen(process.env.PORT || 4000, () => console.log(`Listen on port ${process.env.PORT || 4000}`));
